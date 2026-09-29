@@ -1,11 +1,12 @@
-"""Part 1: Inverse kinematics and trajectory tracking on a single leg.
+"""Inverse kinematics and trajectory tracking on a single leg (handout Part 3).
 
 Run the controller stack first (separate terminal):
-    ros2 launch part_1.launch.py
+    ros2 launch ik.launch.py
 Then run this node:
-    python3 part_1_ik.py
+    python3 ik.py
 
-Only the three front-right joints are commanded in Part 1 (see part_1.yaml).
+Only the three front-right joints are commanded here (see ik.yaml).
+FK and IK (TODOs 1-4) go in kinematics.py, which walking.py reuses.
 """
 
 import rclpy
@@ -13,6 +14,9 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 import numpy as np
+
+from kinematics import fr_leg_fk, inverse_kinematics
+
 np.set_printoptions(precision=3, suppress=True)
 
 # Gains for the on-board joint controller. We command positions here; the motor
@@ -63,50 +67,6 @@ class InverseKinematics(Node):
         self.joint_positions = np.array([msg.position[msg.name.index(joint)] for joint in joints_of_interest])
         self.joint_velocities = np.array([msg.velocity[msg.name.index(joint)] for joint in joints_of_interest])
 
-    def forward_kinematics(self, theta1, theta2, theta3):
-        ################################################################################################
-        # TODO 1: Compute the forward kinematics for the front right leg (should be easy after lab 2!)
-        ################################################################################################
-        return
-
-    def inverse_kinematics(self, target_ee, initial_guess=[0, 0, 0]):
-        def cost_function(theta):
-            # Compute the cost function and the squared L2 norm of the error
-            # return the cost and the squared L2 norm of the error
-            ################################################################################################
-            # TODO 2: Implement the cost function
-            # HINT: You can use the * notation on a list to "unpack" a list
-            ################################################################################################
-            return None, None
-
-        def gradient(theta, epsilon=1e-3):
-            # Compute the gradient of the cost function using finite differences
-            ################################################################################################
-            # TODO 3: Implement the gradient computation
-            ################################################################################################
-            return
-
-        theta = np.array(initial_guess)
-        learning_rate = None # TODO 4: Set the learning rate
-        max_iterations = None # TODO 4: Set the maximum number of iterations
-        tolerance = None # TODO 4: Set the tolerance for the L1 norm of the error
-
-        cost_l = []
-        for _ in range(max_iterations):
-            grad = gradient(theta)
-
-            # Update the theta (parameters) using the gradient and the learning rate
-            ################################################################################################
-            # TODO 4: Implement the gradient update. Use the cost function you implemented, and use tolerance
-            # to determine if IK has converged
-            # TODO (BONUS): Implement the (quasi-)Newton's method instead of finite differences for faster
-            # convergence
-            ################################################################################################
-
-        # print(f'Cost: {cost_l}') # Use to debug to see if your cost function converges within max_iterations
-
-        return theta
-
     def interpolate_triangle(self, t):
         # Interpolate between the three triangle positions in self.ee_triangle_positions
         # based on the current time t
@@ -118,15 +78,15 @@ class InverseKinematics(Node):
     def ik_timer_callback(self):
         if self.joint_positions is not None:
             target_ee = self.interpolate_triangle(self.t)
-            self.target_joint_positions = self.inverse_kinematics(target_ee, self.joint_positions)
-            current_ee = self.forward_kinematics(*self.joint_positions)
+            self.target_joint_positions = inverse_kinematics(fr_leg_fk, target_ee, self.joint_positions)
+            current_ee = fr_leg_fk(self.joint_positions)
 
             # update the current time for the triangle interpolation
             ################################################################################################
             # TODO 6: Implement the time update
             ################################################################################################
 
-            self.get_logger().info(f'Target EE: {target_ee}, Current EE: {current_ee}, Target Angles: {self.target_joint_positions}, Target Angles to EE: {self.forward_kinematics(*self.target_joint_positions)}, Current Angles: {self.joint_positions}')
+            self.get_logger().info(f'Target EE: {target_ee}, Current EE: {current_ee}, Target Angles: {self.target_joint_positions}, Target Angles to EE: {fr_leg_fk(self.target_joint_positions)}, Current Angles: {self.joint_positions}')
 
     def pd_timer_callback(self):
         if self.target_joint_positions is not None:

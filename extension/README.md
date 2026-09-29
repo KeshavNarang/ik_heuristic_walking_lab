@@ -27,12 +27,12 @@ python3 viser_app.py
 Open the URL it prints (`http://<pi-ip>:8080`).
 
 **With the robot.** Put Pupper on its stand first. Bring up the same controller
-stack you used for Part 2, but run the tuner *instead of* `part_2_walking.py` — both
+stack you used for Part 5, but run the tuner *instead of* `walking.py` — both
 publish to `/forward_command_controller/commands`, so only one may run at a time.
 
 ```bash
 # terminal 1
-ros2 launch ~/ik_heuristic_walking_lab/part_2.launch.py
+ros2 launch ~/ik_heuristic_walking_lab/walking.launch.py
 # terminal 2
 cd ~/pupper-gait-tuner && python3 main.py
 ```
@@ -44,18 +44,18 @@ and use "Stand (reset pose)" to stop.
 
 | TODO | File | What |
 |------|------|------|
-| 11 | `~/pupper-gait-tuner/gait.py` | add your own entries to `GAIT_PATTERNS` (they appear in the Preset dropdown automatically) |
-| 12 | `~/pupper-gait-tuner/gait.py` | change the swing arc in `foot_position()` |
-| 13 | `extension/tuned_params_to_keyframes.py` (here) | convert the gait you tuned back into Part 2 keyframes |
+| 9 | `~/pupper-gait-tuner/gait.py` | add your own entries to `GAIT_PATTERNS` (they appear in the Preset dropdown automatically) |
+| 10 | `~/pupper-gait-tuner/gait.py` | change the swing arc in `foot_position()` |
+| 11 | `extension/tuned_params_to_keyframes.py` (here) | convert the gait you tuned back into walking.py keyframes |
 
-Check your work on TODO 11/12 with the tuner's self-test, which reports IK accuracy:
+Check your work on TODO 9/10 with the tuner's self-test, which reports IK accuracy:
 
 ```bash
 cd ~/pupper-gait-tuner && python3 gait.py
 # cache (50, 12) in 27 ms, max EE error 0.0000 mm
 ```
 
-Then run TODO 13 and paste its output into `part_2_walking.py`:
+Then run TODO 11 and paste its output into `walking.py`:
 
 ```bash
 cd ~/ik_heuristic_walking_lab/extension

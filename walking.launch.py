@@ -42,7 +42,7 @@ def generate_launch_description():
     robot_controllers = PathJoinSubstitution(
         [
             ThisLaunchFileDir(),
-            "part_1.yaml",
+            "walking.yaml",
         ]
     )
     # rviz_config_file = PathJoinSubstitution(

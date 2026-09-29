@@ -8,47 +8,57 @@ where you write the code.
 
 | File | Purpose |
 |------|---------|
-| `part_1_ik.py` | Part 1: FK, gradient-descent IK, and triangle trajectory tracking on the front right leg |
-| `part_1.yaml` / `part_1.launch.py` | controller stack for Part 1 (commands 3 joints) |
-| `part_2_walking.py` | Parts 2–5: FK for all four legs, trot keyframes, and the gait loop |
-| `part_2.yaml` / `part_2.launch.py` | controller stack for Part 2 (commands all 12 joints) |
+| `kinematics.py` | Your lab 2 FK for all four legs, plus gradient-descent IK, shared by `ik.py` and `walking.py`. `python3 kinematics.py` checks it without the robot |
+| `ik.py` | Handout Part 3: triangle trajectory tracking on the front right leg |
+| `ik.yaml` / `ik.launch.py` | controller stack for `ik.py` (commands 3 joints) |
+| `walking.py` | Handout Parts 4–5: trot keyframes and the gait loop on all four legs |
+| `walking.yaml` / `walking.launch.py` | controller stack for `walking.py` (commands all 12 joints) |
 | `extension/` | Part 6: live gait tuning with `pupper-gait-tuner` |
 
 ## Running
 
-Each part needs two terminals. Put Pupper on its stand before running anything.
+Each program needs two terminals. Put Pupper on its stand before running anything.
 
-**Part 1**
-
-```bash
-cd ~/ik_heuristic_walking_lab
-ros2 launch part_1.launch.py     # terminal 1
-python3 part_1_ik.py             # terminal 2
-```
-
-**Part 2**
+**IK on one leg (handout Part 3)**
 
 ```bash
 cd ~/ik_heuristic_walking_lab
-ros2 launch part_2.launch.py     # terminal 1
-python3 part_2_walking.py        # terminal 2
+ros2 launch ik.launch.py     # terminal 1
+python3 ik.py             # terminal 2
 ```
 
-Part 2 solves IK for the whole gait cycle at startup, which takes a few seconds.
+**Walking (handout Parts 4–5)**
+
+```bash
+cd ~/ik_heuristic_walking_lab
+ros2 launch walking.launch.py     # terminal 1
+python3 walking.py        # terminal 2
+```
+
+`walking.py` solves IK for the whole gait cycle at startup, which takes a few seconds.
 Once your gait works you can save that result and skip the solve:
 
 ```bash
-python3 part_2_walking.py --save-cache   # solve, then write joint_positions_cache.npz
-python3 part_2_walking.py --use-cache    # load it back and start immediately
+python3 walking.py --save-cache   # solve, then write joint_positions_cache.npz
+python3 walking.py --use-cache    # load it back and start immediately
 ```
 
 Regenerate the cache whenever you change the keyframes — `--use-cache` will happily
 replay a stale gait.
 
-Only one process may drive the motors at a time. Stop `part_1_ik.py` before starting
-`part_2_walking.py`, and stop both before running the gait tuner.
+Only one process may drive the motors at a time. Stop `ik.py` before starting
+`walking.py`, and stop both before running the gait tuner.
 
 ## TODOs
 
-Part 1 has TODOs 1–6, Part 2 has TODOs 7–10, and the extension has TODOs 11–13. TODOs
-marked `[already done in Part 1]` are places to bring forward code you already wrote.
+TODOs are numbered in handout order:
+
+| TODOs | File |
+|-------|------|
+| 1 | `kinematics.py`: paste in your four-leg FK from lab 2 |
+| 2–4 | `kinematics.py`: gradient-descent IK |
+| 5–6 | `ik.py`: triangle trajectory |
+| 7–8 | `walking.py`: trot keyframes and interpolation |
+| 9–11 | extension (see `extension/README.md`) |
+
+`ik.py` and `walking.py` both import FK and IK from `kinematics.py`, so anything you fix there fixes both.

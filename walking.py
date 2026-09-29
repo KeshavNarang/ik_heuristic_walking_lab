@@ -1,17 +1,18 @@
-"""Part 2: Heuristic walking - a trotting gait on all four legs.
+"""Heuristic walking - a trotting gait on all four legs (handout Parts 4-5).
 
 Run the controller stack first (separate terminal):
-    ros2 launch part_2.launch.py
+    ros2 launch walking.launch.py
 Then run this node:
-    python3 part_2_walking.py
+    python3 walking.py
 
-All twelve joints are commanded in Part 2 (see part_2.yaml).
+All twelve joints are commanded here (see walking.yaml). FK and IK for all four
+legs come from kinematics.py.
 
 Building the joint cache runs your gradient-descent IK 200 times and takes a few
 seconds. Once your gait is working you can save and reuse it:
 
-    python3 part_2_walking.py --save-cache   # compute, then write the cache to disk
-    python3 part_2_walking.py --use-cache    # skip the solve and load it back
+    python3 walking.py --save-cache   # compute, then write the cache to disk
+    python3 walking.py --use-cache    # skip the solve and load it back
 
 Rebuild the cache (plain run, or --save-cache) any time you change the keyframes.
 """
@@ -24,35 +25,13 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 import numpy as np
+
+from kinematics import LEG_FK, inverse_kinematics
+
 np.set_printoptions(precision=3, suppress=True)
 
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           'joint_positions_cache.npz')
-
-
-def rotation_x(angle):
-    ################################################################################################
-    # TODO 7: [already done in Part 1] paste your forward kinematics helpers here
-    ################################################################################################
-    return
-
-def rotation_y(angle):
-    ################################################################################################
-    # TODO 7: [already done in Part 1] paste your forward kinematics helpers here
-    ################################################################################################
-    return
-
-def rotation_z(angle):
-    ################################################################################################
-    # TODO 7: [already done in Part 1] paste your forward kinematics helpers here
-    ################################################################################################
-    return
-
-def translation(x, y, z):
-    ################################################################################################
-    # TODO 7: [already done in Part 1] paste your forward kinematics helpers here
-    ################################################################################################
-    return
 
 
 class InverseKinematics(Node):
@@ -87,37 +66,37 @@ class InverseKinematics(Node):
         mid_swing_position = np.array([0.0, 0.0, -0.05])
 
         ## trotting
-        # TODO 9: Implement each leg's trajectory in the trotting gait.
+        # TODO 7: Implement each leg's trajectory in the trotting gait.
         rf_ee_offset = np.array([0.06, -0.09, 0])
         rf_ee_triangle_positions = np.array([
             ################################################################################################
-            # TODO 9: Implement the trotting gait
+            # TODO 7: Implement the trotting gait
             ################################################################################################
         ]) + rf_ee_offset
 
         lf_ee_offset = np.array([0.06, 0.09, 0])
         lf_ee_triangle_positions = np.array([
             ################################################################################################
-            # TODO 9: Implement the trotting gait
+            # TODO 7: Implement the trotting gait
             ################################################################################################
         ]) + lf_ee_offset
 
         rb_ee_offset = np.array([-0.11, -0.09, 0])
         rb_ee_triangle_positions = np.array([
             ################################################################################################
-            # TODO 9: Implement the trotting gait
+            # TODO 7: Implement the trotting gait
             ################################################################################################
         ]) + rb_ee_offset
 
         lb_ee_offset = np.array([-0.11, 0.09, 0])
         lb_ee_triangle_positions = np.array([
             ################################################################################################
-            # TODO 9: Implement the trotting gait
+            # TODO 7: Implement the trotting gait
             ################################################################################################
         ]) + lb_ee_offset
 
         self.ee_triangle_positions = [rf_ee_triangle_positions, lf_ee_triangle_positions, rb_ee_triangle_positions, lb_ee_triangle_positions]
-        self.fk_functions = [self.fr_leg_fk, self.fl_leg_fk, self.br_leg_fk, self.bl_leg_fk]
+        self.fk_functions = LEG_FK
 
         if use_cache:
             self.target_joint_positions_cache, self.target_ee_cache = self.load_cached_joint_positions()
@@ -133,33 +112,6 @@ class InverseKinematics(Node):
         self.pd_timer = self.create_timer(self.pd_timer_period, self.pd_timer_callback)
         self.ik_timer = self.create_timer(self.ik_timer_period, self.ik_timer_callback)
 
-    def fr_leg_fk(self, theta):
-        # Already implemented in Lab 2
-        T_RF_0_1 = translation(0.07500, -0.08350, 0) @ rotation_x(1.57080) @ rotation_z(theta[0])
-        T_RF_1_2 = rotation_y(-1.57080) @ rotation_z(theta[1])
-        T_RF_2_3 = translation(0, -0.04940, 0.06850) @ rotation_y(1.57080) @ rotation_z(theta[2])
-        T_RF_3_ee = translation(0.06231, -0.06216, 0.01800)
-        T_RF_0_ee = T_RF_0_1 @ T_RF_1_2 @ T_RF_2_3 @ T_RF_3_ee
-        return T_RF_0_ee[:3, 3]
-
-    def fl_leg_fk(self, theta):
-        ################################################################################################
-        # TODO 8: implement forward kinematics here
-        ################################################################################################
-        return
-
-    def br_leg_fk(self, theta):
-        ################################################################################################
-        # TODO 8: implement forward kinematics here
-        ################################################################################################
-        return
-
-    def bl_leg_fk(self, theta):
-        ################################################################################################
-        # TODO 8: implement forward kinematics here
-        ################################################################################################
-        return
-
     def forward_kinematics(self, theta):
         return np.concatenate([self.fk_functions[i](theta[3*i: 3*i+3]) for i in range(4)])
 
@@ -173,41 +125,10 @@ class InverseKinematics(Node):
         self.joint_positions = np.array([msg.position[msg.name.index(joint)] for joint in joints_of_interest])
         self.joint_velocities = np.array([msg.velocity[msg.name.index(joint)] for joint in joints_of_interest])
 
-    def inverse_kinematics_single_leg(self, target_ee, leg_index, initial_guess=[0, 0, 0]):
-        leg_forward_kinematics = self.fk_functions[leg_index]
-
-        def cost_function(theta):
-            current_position = leg_forward_kinematics(theta)
-            ################################################################################################
-            # TODO 7: [already done in Part 1] paste your inverse kinematics here
-            ################################################################################################
-            return None, None
-
-        def gradient(theta, epsilon=1e-3):
-            grad = np.zeros(3)
-            ################################################################################################
-            # TODO 7: [already done in Part 1] paste your inverse kinematics here
-            ################################################################################################
-            return grad
-
-        theta = np.array(initial_guess).astype(np.float64)
-        learning_rate = None # TODO 7: [already done in Part 1] paste your inverse kinematics here
-        max_iterations = None # TODO 7: [already done in Part 1] paste your inverse kinematics here
-        tolerance = None # TODO 7: [already done in Part 1] paste your inverse kinematics here
-
-        cost_l = []
-        for _ in range(max_iterations):
-            ################################################################################################
-            # TODO 7: [already done in Part 1] paste your inverse kinematics here
-            ################################################################################################
-            continue
-
-        return theta
-
     def interpolate_triangle(self, t, leg_index):
         ################################################################################################
-        # TODO 10: implement interpolation for all 4 legs here
-        # Unlike Part 1, t is a float between 0 and 1 covering one full gait cycle, and each leg has
+        # TODO 8: implement interpolation for all 4 legs here
+        # Unlike in ik.py, t is a float between 0 and 1 covering one full gait cycle, and each leg has
         # six keyframes instead of three.
         ################################################################################################
 
@@ -224,7 +145,11 @@ class InverseKinematics(Node):
             for t in np.arange(0, 1, 0.02):
                 print(f'Leg {leg_index}, t={t:.2f}')
                 target_ee = self.interpolate_triangle(t, leg_index)
-                target_joint_positions = self.inverse_kinematics_single_leg(target_ee, leg_index, initial_guess=target_joint_positions)
+                # The cache is solved once at startup, so it can afford a tighter
+                # tolerance than ik.py's live solve.
+                target_joint_positions = inverse_kinematics(
+                    self.fk_functions[leg_index], target_ee, target_joint_positions,
+                    max_iterations=100, tolerance=1e-4)
 
                 target_joint_positions_cache[leg_index].append(target_joint_positions)
                 target_ee_cache[leg_index].append(target_ee)
