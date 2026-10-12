@@ -215,7 +215,7 @@ LEG_FK = [fr_leg_fk, fl_leg_fk, br_leg_fk, bl_leg_fk]
 
 
 def inverse_kinematics(leg_fk, target_ee, initial_guess=(0, 0, 0),
-                       learning_rate=5, max_iterations=100, tolerance=0.01):
+                       learning_rate=5, max_iterations=100, tolerance=1e-3):
     """Joint angles that put leg_fk's foot at target_ee, found by gradient descent.
 
     leg_fk is one of the FK functions above, so the same solver works for every leg.
@@ -231,8 +231,8 @@ def inverse_kinematics(leg_fk, target_ee, initial_guess=(0, 0, 0),
         # TODO 2: Implement the cost function using leg_fk
         ################################################################################################
 
-        L1 = leg_fk(theta) - target_ee # we still need to turn L1 to a scalar
-        cost = np.linalg.norm(L1)
+        L1 = np.abs(leg_fk(theta) - target_ee) # technically L1 is supposed to be a scalar
+        cost = np.linalg.norm(L1) ** 2
         # print("COST")
         # print(cost.shape)
         # print(cost)
@@ -247,16 +247,24 @@ def inverse_kinematics(leg_fk, target_ee, initial_guess=(0, 0, 0),
         
         theta_plus = theta + epsilon
         theta_minus = theta - epsilon
-        theta_1 = np.array(theta_plus[0], theta[1], theta[2])
-    
 
-        partial_gradient_1 = (cost_function(theta[0] + epsilon)[0] - cost_function(theta[0] - epsilon)[0])/(2 * epsilon)
-        partial_gradient_2 = (cost_function(theta[1] + epsilon)[0] - cost_function(theta[1] - epsilon)[0])/(2 * epsilon)
-        partial_gradient_3 = (cost_function(theta[2] + epsilon)[0] - cost_function(theta[2] - epsilon)[0])/(2 * epsilon)
+        theta_0_plus = np.array([theta_plus[0], theta[1], theta[2]])
+        theta_0_minus = np.array([theta_minus[0], theta[1], theta[2]])
 
-        gradient = np.array([partial_gradient_1, partial_gradient_2, partial_gradient_3])
+        theta_1_plus = np.array([theta[0], theta_plus[1], theta[2]])
+        theta_1_minus = np.array([theta[0], theta_minus[1], theta[2]])
+
+        theta_2_plus = np.array([theta[0], theta[1], theta_plus[2]])
+        theta_2_minus = np.array([theta[0], theta[1], theta_minus[2]])
+
+        # we could also have done theta.copy with perturb
+
+        partial_gradient_0 = (cost_function(theta_0_plus)[0] - cost_function(theta_0_minus)[0])/(2 * epsilon)
+        partial_gradient_1 = (cost_function(theta_1_plus)[0] - cost_function(theta_1_minus)[0])/(2 * epsilon)
+        partial_gradient_2 = (cost_function(theta_2_plus)[0] - cost_function(theta_2_minus)[0])/(2 * epsilon)
+
+        gradient = np.array([partial_gradient_0, partial_gradient_1, partial_gradient_2])
         return gradient
-
 
     theta = np.array(initial_guess).astype(np.float64)
 
@@ -272,21 +280,14 @@ def inverse_kinematics(leg_fk, target_ee, initial_guess=(0, 0, 0),
         # convergence
         ################################################################################################
         
-        cost = theta - target_ee
-
-        cost_norm = np.linalg.norm(cost)
-        cost_l.append(round(cost_norm, 2))
-
-        if (np.linalg.norm(cost_norm) < tolerance):
+        cost, L1 = cost_function(theta)
+        # cost_l.append(cost)
+        if (np.mean(L1) < tolerance):
             break
         theta = theta - learning_rate * grad
 
-        
-
     print(f'Cost: {cost_l}') # Use to debug to see if your cost function converges within max_iterations
-
     return theta
-
 
 if __name__ == '__main__':
     np.set_printoptions(precision=4, suppress=True)
@@ -300,8 +301,9 @@ if __name__ == '__main__':
     # A few millimeters of error or less means IK is working.
     print('IK round trip (walking.py settings, from the zero pose):')
     goal_angles = np.array([0.1, 0.4, -0.8])
+    initial_guess = np.array([0, 0, 0])
     for name, leg_fk in zip(names, LEG_FK):
         target = leg_fk(goal_angles)
-        theta = inverse_kinematics(leg_fk, target, max_iterations=100, tolerance=1e-4)
+        theta = inverse_kinematics(leg_fk, target, initial_guess, max_iterations=100, tolerance=1e-4)
         error_mm = 1000 * np.linalg.norm(leg_fk(theta) - target)
         print(f'  {name:12s} foot error {error_mm:.2f} mm')

@@ -14,6 +14,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 import numpy as np
+import math
 
 from kinematics import fr_leg_fk, inverse_kinematics
 
@@ -73,11 +74,24 @@ class InverseKinematics(Node):
         ################################################################################################
         # TODO 5: Implement the interpolation function
         ################################################################################################
-        return
+        # KESHAV: make this more readable
+        time = t % 3
+
+        prev_sec = math.floor(time) 
+        next_sec = (prev_sec + 1) % 3
+
+        prev_point = self.ee_triangle_positions[prev_sec] 
+        next_point = self.ee_triangle_positions[next_sec]
+
+        decimal = time % 1
+
+        return prev_point*(1-decimal) + next_point*(decimal)
 
     def ik_timer_callback(self):
         if self.joint_positions is not None:
             target_ee = self.interpolate_triangle(self.t)
+
+            # should this be initial guess instead?
             self.target_joint_positions = inverse_kinematics(fr_leg_fk, target_ee, self.joint_positions)
             current_ee = fr_leg_fk(self.joint_positions)
 
@@ -85,6 +99,8 @@ class InverseKinematics(Node):
             ################################################################################################
             # TODO 6: Implement the time update
             ################################################################################################
+
+            self.t = self.t + self.ik_timer_period
 
             self.get_logger().info(f'Target EE: {target_ee}, Current EE: {current_ee}, Target Angles: {self.target_joint_positions}, Target Angles to EE: {fr_leg_fk(self.target_joint_positions)}, Current Angles: {self.joint_positions}')
 
