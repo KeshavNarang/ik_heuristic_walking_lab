@@ -21,7 +21,7 @@ import sys
 import numpy as np
 
 # The tuner is a separate repo; point this at wherever you cloned it.
-TUNER_PATH = os.path.expanduser('~/pupper-gait-tuner')
+TUNER_PATH = os.path.expanduser('~/labs/pupper-gait-tuner')
 sys.path.insert(0, TUNER_PATH)
 
 try:
@@ -66,8 +66,18 @@ def keyframes_for_leg(leg_name, params, n=N_KEYFRAMES):
     #     the same trajectory at a shifted phase is exactly the "rotate the keyframe list"
     #     trick you used by hand when you wrote the trot in Part 5.
     ################################################################################################
-    return np.zeros((n, 3))
 
+    offset = effective_offsets(params)[leg_name]
+    nominal = nominal_offset(leg_name, params)
+
+    keyframes = []
+
+    for k in range(n):
+        phase = k/n + offset
+        foot = foot_position(phase, leg_name, params)
+        keyframes.append(foot - nominal)
+
+    return keyframes
 
 def emit_snippet(params):
     """Print the keyframe block to paste into walking.py."""

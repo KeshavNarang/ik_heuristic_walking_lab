@@ -69,53 +69,44 @@ class InverseKinematics(Node):
 
         ## trotting
         # TODO 7: Implement each leg's trajectory in the trotting gait.
-        rf_ee_offset = np.array([0.06, -0.09, 0])
+        rf_ee_offset = np.array([0.0600, -0.0900, 0])
         rf_ee_triangle_positions = np.array([
-            stand_position_1, 
-            stand_position_2,
-            stand_position_3,
-            liftoff_position,
-            mid_swing_position,
-            touch_down_position
+            [ 0.0500,  0.0000, -0.1400],
+            [ 0.0251,  0.0000, -0.1400],
+            [ 0.0002,  0.0000, -0.1400],
+            [-0.0246,  0.0000, -0.1400],
+            [-0.0495,  0.0000, -0.1400],
+            [-0.0005,  0.0000, -0.0500],
         ]) + rf_ee_offset
 
-        lf_ee_offset = np.array([0.06, 0.09, 0])
+        lf_ee_offset = np.array([0.0600, 0.0900, 0])
         lf_ee_triangle_positions = np.array([
-            ################################################################################################
-            # TODO 7: Implement the trotting gait
-            ################################################################################################
-            liftoff_position,
-            mid_swing_position,
-            touch_down_position, 
-            stand_position_1, 
-            stand_position_2,
-            stand_position_3
+            [-0.0246,  0.0000, -0.1400],
+            [-0.0495,  0.0000, -0.1400],
+            [-0.0005,  0.0000, -0.0500],
+            [ 0.0500,  0.0000, -0.1400],
+            [ 0.0251,  0.0000, -0.1400],
+            [ 0.0002,  0.0000, -0.1400],
         ]) + lf_ee_offset
 
-        rb_ee_offset = np.array([-0.11, -0.09, 0])
+        rb_ee_offset = np.array([-0.1100, -0.0900, 0])
         rb_ee_triangle_positions = np.array([
-            ################################################################################################
-            # TODO 7: Implement the trotting gait
-            ################################################################################################
-            stand_position_1, 
-            stand_position_2,
-            stand_position_3,
-            liftoff_position,
-            mid_swing_position,
-            touch_down_position
+            [-0.0246,  0.0000, -0.1400],
+            [-0.0495,  0.0000, -0.1400],
+            [-0.0005,  0.0000, -0.0500],
+            [ 0.0500,  0.0000, -0.1400],
+            [ 0.0251,  0.0000, -0.1400],
+            [ 0.0002,  0.0000, -0.1400],
         ]) + rb_ee_offset
 
-        lb_ee_offset = np.array([-0.11, 0.09, 0])
+        lb_ee_offset = np.array([-0.1100, 0.0900, 0])
         lb_ee_triangle_positions = np.array([
-            ################################################################################################
-            # TODO 7: Implement the trotting gait
-            ################################################################################################
-            liftoff_position,
-            mid_swing_position,
-            touch_down_position, 
-            stand_position_1, 
-            stand_position_2,
-            stand_position_3
+            [ 0.0500,  0.0000, -0.1400],
+            [ 0.0251,  0.0000, -0.1400],
+            [ 0.0002,  0.0000, -0.1400],
+            [-0.0246,  0.0000, -0.1400],
+            [-0.0495,  0.0000, -0.1400],
+            [-0.0005,  0.0000, -0.0500],
         ]) + lb_ee_offset
 
         self.ee_triangle_positions = [rf_ee_triangle_positions, lf_ee_triangle_positions, rb_ee_triangle_positions, lb_ee_triangle_positions]
